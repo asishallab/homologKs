@@ -8,3 +8,4 @@ Maintainer: Dr Asis Hallab <hallab@mpipz.mpg.de>
 Description: Computes pairwise Ks of the paranome of an organism
 License: GPL-3
 Depends: R (>= 3.2.0), chiFamilyAnalyses (>= 1.0), rredis (>= 1.7.0), RUnit (>= 0.4.29)
+LinkingTo: Rcpp
