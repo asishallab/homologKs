@@ -76,18 +76,9 @@ computeKsPipeline <- function(x, cds, t.d = tempdir()) {
 familyDist <- function(fam.name, fam.tbl = chi.paralogous.fams, ks.tbl = chi.paranome.ks, 
     na.as.ks = 1e+06) {
     genes <- sort(unique(fam.tbl[which(fam.tbl[, 1] == fam.name), 2]))
-    matrix(as.numeric(unlist(lapply(genes, function(x) {
-        lapply(genes, function(y) {
-            if (x == y) {
-                0
-            } else {
-                ks.i <- with(ks.tbl, which(V1 == x & V2 == y | V1 == y & V2 == x))
-                if (!is.null(ks.i) && !is.na(ks.i) && length(ks.i) > 0) {
-                  ks.tbl[ks.i, 3][[1]]
-                } else na.as.ks
-            }
-        })
-    }))), nrow = length(genes), ncol = length(genes), dimnames = list(genes, genes))
+    x <- ks.tbl[with(ks.tbl, which(V1 %in% genes & V2 %in% genes)), 3:4]
+    genesKs <- setNames(x$V3, x$V4)
+    .Call("familyDistCpp", genes, genesKs, na.as.ks)
 }
 
 #' Checks wether node 'tr.nd' is a tip or not in tree 'phylo.tr'.
@@ -195,38 +186,3 @@ testWeightedDistsForTree <- function() {
     # If we get to here, everything is fine:
     TRUE
 } 
-
-rowIndex <- function( i.vector, dim.square.mtrx ) {
-  x <- i.vector %% dim.square.mtrx
-  if( x == 0 ) dim.square.mtrx else round( x / 10 * dim.square.mtrx )
-}
-
-colIndex <- function( i.vector, dim.square.mtrx ) {
-  ceiling( i.vector / dim.square.mtrx )
-}
-
-fun.bd <- "CharacterVector genes(x);
-List genePairKs(y);
-CharacterVector genePairs = genePairKs.names();
-long n( genes.size() );
-NumericMatrix xx(n,n);
-std::vector<std::string> pair(2);
-std::string sPair = \"\";
-NumericVector defDist(z);
-for ( long i=1; i<n; ++i ) {
-  for ( long j=0; j<i; ++j ) {
-    pair[0] = genes(i);
-    pair[1] = genes(j);
-    std::sort( pair.begin(), pair.end() );
-    sPair = pair[0] + \"_\" + pair[1];
-    Rcpp::Rcout << sPair << std::endl;
-    bool present =  std::find(genePairs.begin(), genePairs.end(), sPair.c_str()) != genePairs.end();
-    if ( present ) {
-      xx(i, j) = as<double>( genePairKs( sPair ) );
-    } else {
-      xx(i, j) = defDist(0);
-    }
-  }
-}
-return( wrap( xx ) );
-"
