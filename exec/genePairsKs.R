@@ -16,11 +16,11 @@ t.d <- if (length(input.args) > 6) {
     file.path(input.args[[7]])
 } else tempdir()
 
-if (length(input.args > 7)) {
+if (length(input.args) > 7) {
     options(paranomeKsR.filter.MSA = as.logical(input.args[[8]])[[1]])
 }
 
-if (length(input.args > 8)) {
+if (length(input.args) > 8) {
     options(paranomeKsR.ks.method = input.args[[9]])
 }
 
