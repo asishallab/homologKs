@@ -1,6 +1,6 @@
 require(paranomeKsR)
 
-message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row coding_sequences.fasta redis_url out_path [intermediate_files_directory] [filter_MSA (TRUE|FALSE)] [KaKs_Calculator's method (default: MA)]")
+message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row coding_sequences.fasta redis_url out_path [intermediate_files_directory] [filter_MSA (TRUE|FALSE default: TRUE)] [KaKs_Calculator's method (default: YN)]")
 
 #' Read and process input arguments:
 input.args <- commandArgs(trailingOnly = TRUE)
