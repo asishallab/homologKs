@@ -5,7 +5,9 @@
 \title{Runs the pipeline to compute the Ks values of gene pair 'x' with coding
 sequences held in 'cds'. Temporary files are stored in 't.d'.}
 \usage{
-computeKsPipeline(x, cds, t.d = tempdir())
+computeKsPipeline(x, cds, t.d = tempdir(),
+  filter.MSA = getOption("paranomeKsR.filter.MSA", TRUE),
+  ks.method = getOption("paranomeKsR.ks.method", "MA"))
 }
 \arguments{
 \item{x}{character vector of gene IDs}
@@ -14,6 +16,15 @@ computeKsPipeline(x, cds, t.d = tempdir())
 coding sequences of the genes in 'x'}
 
 \item{t.d}{the directory to store the files in, default is tempdir()}
+
+\item{filter.MSA}{boolean indicating wether the gene pair's sequence
+alignment is to be filtered or not. Set option 'paranomeKsR.filter.MSA' to
+FALSE, if you want to switch off the default TRUE.}
+
+\item{ks.method}{command line switch to be passed to 'KaKs_Calculator' as
+the method ('-m' argument) to be used, default is 'MA' (Model Averaging).
+Set option "paranomeKsR.ks.method" to your choice, e.g. 'YN' (Yang, Z. and
+Nielsen, R. (2000) Mol. Biol. Evol., 17, 32-43.)}
 }
 \value{
 A numeric being the result of invoking 'KaKs_Calculator' on the
