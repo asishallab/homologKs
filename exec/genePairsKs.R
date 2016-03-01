@@ -1,7 +1,8 @@
 require(paranomeKsR)
 
-message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row coding_sequences.fasta redis_url out_path [intermediate_files_directory]")
+message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row coding_sequences.fasta redis_url out_path [intermediate_files_directory] [filter_MSA (TRUE|FALSE)] [KaKs_Calculator's method (default: MA)]")
 
+#' Read and process input arguments:
 input.args <- commandArgs(trailingOnly = TRUE)
 
 start.row <- as.integer(input.args[[2]])
@@ -15,6 +16,15 @@ t.d <- if (length(input.args) > 6) {
     file.path(input.args[[7]])
 } else tempdir()
 
+if (length(input.args > 7)) {
+    options(paranomeKsR.filter.MSA = as.logical(input.args[[8]])[[1]])
+}
+
+if (length(input.args > 8)) {
+    options(paranomeKsR.ks.method = input.args[[9]])
+}
+
+#' Start the computation:
 b.tbl <- blastp.res.tbl[with(blastp.res.tbl, which(V1 != V2 & V3 >= 30 & V4 >= 150)), 
     c("V1", "V2")]
 b.tbl$V3 <- as.numeric(NA)

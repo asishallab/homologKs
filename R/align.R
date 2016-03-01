@@ -220,20 +220,17 @@ alignCodingSequencesPipeline <- function(cds, work.dir, gene.group.name) {
 #' @param chars.2.discard.regex a string representing the regular expression
 #' defining the character class of the positions to be discarded. Default is
 #' '[nN-]'
-#' @param seq.type one of either Biostrings::DNAString or Biostrings::AAString
 #' @param seq.set.type one of either Biostrings::DNAStringSet or
-#' Biostrings::AAStringSet
+#' Biostrings::AAStringSet. Default is Biostrings::DNAStringSet.
 #'
 #' @return The filtered XStringSet with the possibly reduced sequences.
 #' @export
-filterMSA <- function(cds.msa, chars.2.discard.regex = "[nN-]", seq.type = DNAString, 
-    seq.set.type = DNAStringSet) {
+filterMSA <- function(cds.msa, chars.2.discard.regex = "[nN-]", seq.set.type = DNAStringSet) {
     disc.pos <- Reduce(union, lapply(cds.msa, function(x) {
         as.integer(gregexpr("[nN-]", toString(x))[[1]])
     }))
     seq.set.type(setNames(lapply(cds.msa, function(x) {
-        seq.type(paste(strsplit(toString(x), split = NULL)[[1]][setdiff(1:nchar(x), 
-            disc.pos)], collapse = ""))
+        x[setdiff(1:length(x), disc.pos)]
     }), names(cds.msa)))
 }
 

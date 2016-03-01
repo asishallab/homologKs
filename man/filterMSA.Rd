@@ -5,7 +5,7 @@
 \title{Filters a multiple coding sequence alignment discarding positions where any
 sequence has a gap or a 'N' character.}
 \usage{
-filterMSA(cds.msa, chars.2.discard.regex = "[nN-]", seq.type = DNAString,
+filterMSA(cds.msa, chars.2.discard.regex = "[nN-]",
   seq.set.type = DNAStringSet)
 }
 \arguments{
@@ -16,10 +16,8 @@ multiple sequence alignment}
 defining the character class of the positions to be discarded. Default is
 '[nN-]'}
 
-\item{seq.type}{one of either Biostrings::DNAString or Biostrings::AAString}
-
 \item{seq.set.type}{one of either Biostrings::DNAStringSet or
-Biostrings::AAStringSet}
+Biostrings::AAStringSet. Default is Biostrings::DNAStringSet.}
 }
 \value{
 The filtered XStringSet with the possibly reduced sequences.
