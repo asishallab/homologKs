@@ -9,8 +9,10 @@ Description: Computes pairwise Ks of the paranome of an organism
 License: GPL-3
 Depends:
     R (>= 3.2.0),
-    chiFamilyAnalyses (>= 1.0),
     rredis (>= 1.7.0),
-    RUnit (>= 0.4.29)
+    RUnit (>= 0.4.29),
+    inline(>= 0.3.14),
+    Biostrings (>= 2.36.1),
+    ape (>= 3.3)
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1

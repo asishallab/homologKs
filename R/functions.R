@@ -63,9 +63,10 @@ computeKsPipeline <- function(x, cds, t.d = tempdir()) {
 #' @param fam.tbl An instance of base::data.frame with two columns. Columns one
 #' must hold the family names and column two the gene members (IDs). Default is
 #' 'chi.paralogous.fams'.
-#' @param ks.tbl An instance of base::data.frame with three columns. Column one
+#' @param ks.tbl An instance of base::data.frame with four columns. Column one
 #' and two hold gene identifier, and column three the measured distance (Ks)
-#' value. Default is 'chi.paranome.ks'.
+#' value. Default is 'chi.paranome.ks'. Column four holds the gene pair's
+#' identifiers concatonated in alphabetical order and separated by '_'.
 #' @param na.as.ks The value to use, if for a given gene pair no distance value
 #' can be found in 'ks.tbl'. Default is 1e6
 #'
@@ -78,7 +79,7 @@ familyDist <- function(fam.name, fam.tbl = chi.paralogous.fams, ks.tbl = chi.par
     genes <- sort(unique(fam.tbl[which(fam.tbl[, 1] == fam.name), 2]))
     x <- ks.tbl[with(ks.tbl, which(V1 %in% genes & V2 %in% genes)), 3:4]
     genesKs <- setNames(x$V3, x$V4)
-    .Call("familyDistCpp", genes, genesKs, na.as.ks)
+    familyDistCpp(genes, genesKs, na.as.ks)
 }
 
 #' Checks wether node 'tr.nd' is a tip or not in tree 'phylo.tr'.
@@ -130,11 +131,16 @@ getDescendantTipsOrSelf <- function(phylo.tr, tr.nd) {
 #' @param ks.tbl an instance of base::data.frame with three columns, in which
 #' the first two hold gene identifier and the third holds the measured distance
 #' (Ks) values. Default is 'chi.paranome.ks'.
+#' @param weight.func The function used to compute the weighted distance at the
+#' family tree's node 'tr.nd'. Default is base::median. Other functions can be
+#' set as an option, use
+#' 'options('ksParanomeR.dist.weight.func'=yourFunction)'.
 #'
 #' @return A numeric value computed as the mean of all distances of 'relevant'
 #' gene pairs.
 #' @export
-weightedDistsForNode <- function(fam.tr, tr.nd, ks.tbl = chi.paranome.ks) {
+weightedDistsForNode <- function(fam.tr, tr.nd, ks.tbl = chi.paranome.ks, weight.func = getOption("ksParanomeR.dist.weight.func", 
+    median)) {
     desc.nds <- Descendants(fam.tr, tr.nd, type = "children")
     gene.pairs <- expand.grid(getDescendantTipsOrSelf(fam.tr, desc.nds[[1]]), getDescendantTipsOrSelf(fam.tr, 
         desc.nds[[2]]), stringsAsFactors = FALSE)
@@ -162,6 +168,35 @@ weightedDistsForTree <- function(fam.tr, ks.tbl = chi.paranome.ks) {
         tr.nd, ks.tbl)))), nd.names)
 }
 
+#' Pipeline to compute the weighted distances (Ks) for a family of genes.
+#' Weighting is done based on each bipartition of subtrees at a given internal
+#' node of the generated family tree, such that for each node the mean of the
+#' distances is computed for all gene pairs, with one member from each subtree.
+#'
+#' @param fam.name the name of the family as it appears in 'fam.tbl'
+#' @param fam.tbl a two column instance of base::data.frame where the first
+#' column holds the family name and the second the identifier of gene members.
+#' Default is 'chi.paralogous.fams'
+#' @param dist.tbl an instance of base::data.frame with four columns. Column
+#' one and two hold the gene identifier, column three the distance 'Ks' value,
+#' and column four the concatonated and alphabetically sorted gene IDs joined
+#' by '_'. Default is 'chi.paranome.ks'
+#' @param na.dist.as.num A large value to be used for gene pairs where, because
+#' of no significant similarity, 'dist.tbl' has no entry.
+#'
+#' @return A list with two named entries: 'cluster' an instance of ape::phylo
+#' representing the families binary distance tree, and 'weighted.distances' a
+#' named numeric vector with names 'node_i' and values the weighted distance
+#' computed for the corresponding node.
+#' @export
+weightedDistsForFamily <- function(fam.name, fam.tbl = chi.paralogous.fams, dist.tbl = chi.paranome.ks, 
+    na.dist.as.num = 1e+06) {
+    fam.dists <- as.dist(familyDist(fam.name, fam.tbl, dist.tbl, na.dist.as.num))
+    fam.tr <- as.phylo(hclust(fam.dists, method = "single"))
+    fam.ks <- weightedDistsForTree(fam.tr, dist.tbl)
+    list(cluster = fam.tr, weighted.distances = fam.ks)
+}
+
 #' Test function using RUnit to verify the mean distance values for inner tree
 #' nodes.
 #'
@@ -185,4 +220,8 @@ testWeightedDistsForTree <- function() {
         x.tips & V2 == x.comp | V1 == x.comp & V2 %in% x.tips)), 3])), as.numeric(fam.ks[["node_17"]]))
     # If we get to here, everything is fine:
     TRUE
-} 
+}
+
+#' Body of inline Rcpp function 'familyDistCpp'
+#' @export
+fun.bd <- "CharacterVector genes(sGenes);\nNumericVector genePairKs(sGenePairsKs);\nCharacterVector genePairs = genePairKs.names();\nint n( genes.size() );\nNumericMatrix distMtrx(n,n);\nstd::vector<std::string> pair(2);\nstd::string sPair = \"\";\nNumericVector defDist(sDefDist);\nfor ( int i=1; i<n; ++i ) {\n  for ( int j=0; j<i; ++j ) {\n    pair[0] = genes(i);\n    pair[1] = genes(j);\n    std::sort( pair.begin(), pair.end() );\n    sPair = pair[0] + \"_\" + pair[1];\n    bool present =  std::find(genePairs.begin(), genePairs.end(), sPair.c_str()) != genePairs.end();\n    if ( present ) {\n      distMtrx(i, j) = as<double>( genePairKs( sPair ) );\n    } else {\n      distMtrx(i, j) = defDist(0);\n    }\n  }\n}\n\nrownames(distMtrx) = genes;\ncolnames(distMtrx) = genes;\nreturn( wrap( distMtrx ) );" 

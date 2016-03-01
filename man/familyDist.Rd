@@ -16,9 +16,10 @@ for}
 must hold the family names and column two the gene members (IDs). Default is
 'chi.paralogous.fams'.}
 
-\item{ks.tbl}{An instance of base::data.frame with three columns. Column one
+\item{ks.tbl}{An instance of base::data.frame with four columns. Column one
 and two hold gene identifier, and column three the measured distance (Ks)
-value. Default is 'chi.paranome.ks'.}
+value. Default is 'chi.paranome.ks'. Column four holds the gene pair's
+identifiers concatonated in alphabetical order and separated by '_'.}
 
 \item{na.as.ks}{The value to use, if for a given gene pair no distance value
 can be found in 'ks.tbl'. Default is 1e6}
