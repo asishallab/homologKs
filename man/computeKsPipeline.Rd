@@ -6,7 +6,6 @@
 sequences held in 'cds'. Temporary files are stored in 't.d'.}
 \usage{
 computeKsPipeline(x, cds, t.d = tempdir(),
-  filter.MSA = getOption("paranomeKsR.filter.MSA", TRUE),
   ks.method = getOption("paranomeKsR.ks.method", "YN"))
 }
 \arguments{
@@ -16,10 +15,6 @@ computeKsPipeline(x, cds, t.d = tempdir(),
 coding sequences of the genes in 'x'}
 
 \item{t.d}{the directory to store the files in, default is tempdir()}
-
-\item{filter.MSA}{boolean indicating wether the gene pair's sequence
-alignment is to be filtered or not. Set option 'paranomeKsR.filter.MSA' to
-FALSE, if you want to switch off the default TRUE.}
 
 \item{ks.method}{command line switch to be passed to 'KaKs_Calculator' as
 the method ('-m' argument) to be used, default is 'YN' [1].

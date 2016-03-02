@@ -159,57 +159,18 @@ replaceWithOriginal <- function(san.names, name.mappings) {
 #' @param gene.group.name a string being used to name the output files written
 #' into work.dir. Could be something like 'fam1234'.
 #'
+#' @export
 #' @return The ALIGNED and validated coding sequences as an instance of
 #' Biostrings::DNAStringSet, or nothing if validation discards the rest of
 #' 'cds'.
-#' @export
 alignCodingSequencesPipeline <- function(cds, work.dir, gene.group.name) {
-    #' Sanitize the gene identifiers:
-    name.maps <- sanitizeNames(cds)
-    names(cds) <- name.maps$sanitized
     cds.path <- file.path(work.dir, paste(gene.group.name, "_CDS.fasta", sep = ""))
     writeXStringSet(cds, cds.path)
-    name.maps.path <- file.path(work.dir, paste(gene.group.name, "_name_mappings_table.txt", 
+    cds.msa.path <- file.path(work.dir, paste(gene.group.name, "_CDS_MSA.fasta", 
         sep = ""))
-    write.table(name.maps, name.maps.path, row.names = FALSE, sep = "\t", quote = FALSE)
-    #' Convert to AA and align the AA-sequences:
-    translate2AASeqs(cds.path)
-    #' Remove invalid AA-Sequences, i.e. AA-Seqs with premature stop-codons:
-    aa.path <- file.path(work.dir, paste(gene.group.name, "_CDS_macse_AA.fasta", 
-        sep = ""))
-    aas <- readAAStringSet(aa.path)
-    aas.san <- aas[validateAAStringSet(aas)]
-    #' Warn about removed AA-Seqs:
-    cds.san <- if (length(aas.san) < length(aas)) {
-        len.diff <- length(aas) - length(aas.san)
-        warning(len.diff, " amino-acid-sequences had a premature stop codon and were removed from further analysis.")
-        cds[names(aas.san)]
-    } else cds
-    #' If only a single sequence is left, we're done:
-    cds.msa.orig <- if (length(cds.san) > 1) {
-        #' Write out the sanitized amino acid seqs:
-        aas.san.path <- file.path(work.dir, paste(gene.group.name, "_AA_sanitized.fasta", 
-            sep = ""))
-        writeXStringSet(aas.san, aas.san.path)
-        #' Generate a multiple sequence alignment:
-        aas.msa.path <- file.path(work.dir, paste(gene.group.name, "_AA_sanitized_MSA.fasta", 
-            sep = ""))
-        alignAAStringSet(aas.san.path, aas.msa.path)
-        aas.san.msa <- readAAMultipleAlignment(aas.msa.path)
-        #' Use the aligned AA-Seqs as quide to align the CDS Sequences:
-        cds.msa <- alignCDSSetWithAlignedAAsAsGuide(cds.san, attr(aas.san.msa, "unmasked"))
-        cds.msa.path <- file.path(work.dir, paste(gene.group.name, "_CDS_MSA.fasta", 
-            sep = ""))
-        writeXStringSet(attr(cds.msa, "unmasked"), cds.msa.path)
-        cds.msa@unmasked
-    } else {
-        cds.san
-    }
-    #' Return the CDS MSA as an instance of Biostrings::DNAStringSet using
-    #' the ORIGINAL gene identifiers:
-    if (length(cds.msa.orig) > 0) 
-        names(cds.msa.orig) <- replaceWithOriginal(names(cds.msa.orig), name.maps)
-    cds.msa.orig
+    reverse.align(nucl.file = cds.path, out.file = cds.msa.path, align.prot = TRUE, 
+        clustal.path = "clustalw2")
+    readDNAStringSet(cds.msa.path)
 }
 
 #' Filters a multiple coding sequence alignment discarding positions where any

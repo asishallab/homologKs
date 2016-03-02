@@ -32,9 +32,6 @@ putGenePairIntoRedis <- function(gene.pair) {
 #' @param cds an instance of Biostrings::XStringSet holding the unaligned
 #' coding sequences of the genes in 'x'
 #' @param t.d the directory to store the files in, default is tempdir()
-#' @param filter.MSA boolean indicating wether the gene pair's sequence
-#' alignment is to be filtered or not. Set option 'paranomeKsR.filter.MSA' to
-#' FALSE, if you want to switch off the default TRUE.
 #' @param ks.method command line switch to be passed to 'KaKs_Calculator' as
 #' the method ('-m' argument) to be used, default is 'YN' [1].
 #' Set option 'paranomeKsR.ks.method' to your choice, e.g. 'MA' (Model Averaging)
@@ -43,17 +40,13 @@ putGenePairIntoRedis <- function(gene.pair) {
 #' aligned coding sequences, or NA if an error occurres.
 #' @references Yang, Z. and Nielsen, R. (2000) Mol. Biol. Evol., 17, 32-43.
 #' @export
-computeKsPipeline <- function(x, cds, t.d = tempdir(), filter.MSA = getOption("paranomeKsR.filter.MSA", 
-    TRUE), ks.method = getOption("paranomeKsR.ks.method", "YN")) {
+computeKsPipeline <- function(x, cds, t.d = tempdir(), ks.method = getOption("paranomeKsR.ks.method", 
+    "YN")) {
     p.n <- paste(sort(x), collapse = "_")
     tryCatch({
         if (!genePairInRedis(x)) {
             putGenePairIntoRedis(x)
-            pair.cds.msa.unfiltered <- alignCodingSequencesPipeline(cds[x], t.d, 
-                p.n)
-            pair.cds.msa <- if (filter.MSA) {
-                filterMSA(pair.cds.msa.unfiltered)
-            } else pair.cds.msa.unfiltered
+            pair.cds.msa <- alignCodingSequencesPipeline(cds[x], t.d, p.n)
             axt.path <- file.path(t.d, paste(p.n, ".axt", sep = ""))
             writeLines(unlist(c(p.n, lapply(pair.cds.msa, toString))), con = axt.path)
             ks.out <- sub(".axt", "_KaKs_results.txt", axt.path, fixed = TRUE)

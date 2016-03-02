@@ -3,6 +3,7 @@
 export(alignAAStringSet)
 export(alignCDSSetWithAlignedAAsAsGuide)
 export(alignCDSWithAlignedAASeq)
+export(alignCodingSequencesPipeline)
 export(computeKsPipeline)
 export(familyDist)
 export(filterMSA)
