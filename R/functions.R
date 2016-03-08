@@ -32,26 +32,23 @@ putGenePairIntoRedis <- function(gene.pair) {
 #' @param cds an instance of Biostrings::XStringSet holding the unaligned
 #' coding sequences of the genes in 'x'
 #' @param t.d the directory to store the files in, default is tempdir()
-#' @param ks.method command line switch to be passed to 'KaKs_Calculator' as
-#' the method ('-m' argument) to be used, default is 'YN' [1].
-#' Set option 'paranomeKsR.ks.method' to your choice, e.g. 'MA' (Model Averaging)
+#' @param codeml.call the call passed to system(...) in order to start codeml.
+#' Default is 'codeml', use option 'paranomeKsR.codeml.call' to set another
+#' default.
 #'
-#' @return A numeric being the result of invoking 'KaKs_Calculator' on the
-#' aligned coding sequences, or NA if an error occurres.
+#' @return A numeric being the result of invoking PAML's codeml on the aligned
+#' coding sequences, or NA if an error occurres.
 #' @references Yang, Z. and Nielsen, R. (2000) Mol. Biol. Evol., 17, 32-43.
 #' @export
-computeKsPipeline <- function(x, cds, t.d = tempdir(), ks.method = getOption("paranomeKsR.ks.method", 
-    "YN")) {
+computeKsPipeline <- function(x, cds, t.d = tempdir(), codeml.call = getOption("paranomeKsR.codeml.call", 
+    "codeml")) {
     p.n <- paste(sort(x), collapse = "_")
     tryCatch({
         if (!genePairInRedis(x)) {
             putGenePairIntoRedis(x)
-            pair.cds.msa <- alignCodingSequencesPipeline(cds[x], t.d, p.n)
-            axt.path <- file.path(t.d, paste(p.n, ".axt", sep = ""))
-            writeLines(unlist(c(p.n, lapply(pair.cds.msa, toString))), con = axt.path)
-            ks.out <- sub(".axt", "_KaKs_results.txt", axt.path, fixed = TRUE)
-            system(paste("KaKs_Calculator -m", ks.method, "-i", axt.path, "-o", ks.out))
-            read.table(ks.out, header = TRUE, stringsAsFactors = FALSE)[[1, "Ks"]]
+            pair.cds.msa.path <- alignCodingSequencesPipeline(cds[x], t.d, p.n)
+            pair.codeml.in.out <- renderCodemlInputs(x, pair.cds.msa.path)
+            system(paste(codeml.call, pair.codeml.in.out[["in"]]))
         }
     }, error = function(e) {
         warning("Computing Ks value of gene pair '", p.n, "' caused an error:\n", 
@@ -227,6 +224,41 @@ testWeightedDistsForTree <- function() {
     TRUE
 }
 
+#' Generates the tree and control file to run PAML's codeml in order to compute
+#' the Ks of 'gene.pair'
+#'
+#' @param gene.pair a character of length 2 holding the identifiers of the
+#' pair's genes.
+#' @param cds.msa.path the file path to the gene pair's codon sequences
+#' alignment
+#' @param ks.out.path the file path to the gene pair's codeml output file,
+#' defaut is generated from 'cds.msa.path' substituting '_CDS_MSA.fasta' with
+#' '_codeml_out.txt'
+#' @param cds.codeml.path the file path to the gene pair's codeml input file,
+#' defaut is generated from 'cds.msa.path' substituting '_CDS_MSA.fasta' with
+#' '_codeml_in.cnt'
+#' @param tree.path the file path to the gene pair's tree file, defaut is
+#' generated from 'cds.msa.path' substituting '_CDS_MSA.fasta' with
+#' '_tree.newick'. The tree will be the trivial one: '(A,B);'.
+#'
+#' @return A list with two string entries: 'in' the path to the control file
+#' used as input to PAML's codeml, and 'out' path to the output file generated
+#' by PAML's codeml.
+#' @export
+renderCodemlInputs <- function(gene.pair, cds.msa.path, ks.out.path = sub("_CDS_MSA.fasta", 
+    "_codeml_out.txt", cds.msa.path, fixed = TRUE), cds.codeml.path = sub("_CDS_MSA.fasta", 
+    "_codeml_in.cnt", cds.msa.path, fixed = TRUE), tree.path = sub("_CDS_MSA.fasta", 
+    "_tree.newick", cds.msa.path, fixed = TRUE)) {
+    writeLines(paste("(", gene.pair[[1]], ",", gene.pair[[2]], ");", sep = ""), con = tree.path)
+    brew(text = codeml.tmpl, output = cds.codeml.path)
+    list(`in` = cds.codeml.path, out = ks.out.path)
+}
+
 #' Body of inline Rcpp function 'familyDistCpp'
 #' @export
-fun.bd <- "CharacterVector genes(sGenes);\nNumericVector genePairKs(sGenePairsKs);\nCharacterVector genePairs = genePairKs.names();\nint n( genes.size() );\nNumericMatrix distMtrx(n,n);\nstd::vector<std::string> pair(2);\nstd::string sPair = \"\";\nNumericVector defDist(sDefDist);\nfor ( int i=1; i<n; ++i ) {\n  for ( int j=0; j<i; ++j ) {\n    pair[0] = genes(i);\n    pair[1] = genes(j);\n    std::sort( pair.begin(), pair.end() );\n    sPair = pair[0] + \"_\" + pair[1];\n    bool present =  std::find(genePairs.begin(), genePairs.end(), sPair.c_str()) != genePairs.end();\n    if ( present ) {\n      distMtrx(i, j) = as<double>( genePairKs( sPair ) );\n    } else {\n      distMtrx(i, j) = defDist(0);\n    }\n  }\n}\n\nrownames(distMtrx) = genes;\ncolnames(distMtrx) = genes;\nreturn( wrap( distMtrx ) );" 
+fun.bd <- "CharacterVector genes(sGenes);\nNumericVector genePairKs(sGenePairsKs);\nCharacterVector genePairs = genePairKs.names();\nint n( genes.size() );\nNumericMatrix distMtrx(n,n);\nstd::vector<std::string> pair(2);\nstd::string sPair = \"\";\nNumericVector defDist(sDefDist);\nfor ( int i=1; i<n; ++i ) {\n  for ( int j=0; j<i; ++j ) {\n    pair[0] = genes(i);\n    pair[1] = genes(j);\n    std::sort( pair.begin(), pair.end() );\n    sPair = pair[0] + \"_\" + pair[1];\n    bool present =  std::find(genePairs.begin(), genePairs.end(), sPair.c_str()) != genePairs.end();\n    if ( present ) {\n      distMtrx(i, j) = as<double>( genePairKs( sPair ) );\n    } else {\n      distMtrx(i, j) = defDist(0);\n    }\n  }\n}\n\nrownames(distMtrx) = genes;\ncolnames(distMtrx) = genes;\nreturn( wrap( distMtrx ) );"
+
+#' Template for brew to generate the control file used as input for PAML's
+#' codeml.
+#' @export
+codeml.tmpl <- "seqfile = <%= cds.msa.path %>\n    treefile = <%= tree.path %>\n     outfile = <%= ks.out.path %>\n       noisy = 0\n     verbose = 0\n     runmode = -2\n   cleandata = 1\n     seqtype = 1\n   CodonFreq = 2\n       model = 2\n     NSsites = 0\n       icode = 0\n       Mgene = 0\n   fix_kappa = 0\n       kappa = 2\n   fix_omega = 0\n       omega = 1\n   fix_alpha = 1\n       alpha = .0\n      Malpha = 0\n       ncatG = 4\n       clock = 0\n       getSE = 0\nRateAncestor = 0\n      method = 0" 

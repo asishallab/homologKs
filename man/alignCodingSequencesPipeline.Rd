@@ -7,7 +7,11 @@ then validates them for premature stop codons, subsequently generates a
 multiple sequence alignment (MSA) of amino acid (AA) sequences, then uses
 this AA MSA as guide and aligns the coding sequences in the final step.}
 \usage{
-alignCodingSequencesPipeline(cds, work.dir, gene.group.name)
+alignCodingSequencesPipeline(cds, work.dir, gene.group.name,
+  mafft.call = getOption("paranomeKsR.mafft.call", "mafft --auto"),
+  pal2nal.call = getOption("paranomeKsR.pal2nal.call",
+  paste(file.path(path.package("paranomeKsR"), "pal2nal.pl"),
+  "#msa# #cds# -nogap -nomismatch -output paml > #cds.msa.path#")))
 }
 \arguments{
 \item{cds}{an instance of Biostrings::DNAStringSet representing the coding
@@ -18,11 +22,20 @@ relevant files}
 
 \item{gene.group.name}{a string being used to name the output files written
 into work.dir. Could be something like 'fam1234'.}
+
+\item{mafft.call}{The string passed to system to invoke the alignment
+program MAFFT on the translated amino acid sequences. Defaut is "mafft
+--auto". Set option "paranomeKsR.mafft.call" to change this defaut.}
+
+\item{pal2nal.call}{The string processed and then passed to system to invoke
+the program "pal2nal.pl" in order to generate a multiple coding sequence
+alignment. Three substrings must be present and will be replaced with their
+appropriate paths: #msa#, #cds#, #cds.msa.path#. Default is  "#msa# #cds#
+-nogap -nomismatch -output paml > #cds.msa.path#", set option
+"paranomeKsR.pal2nal.call" to change this defaut.}
 }
 \value{
-The ALIGNED and validated coding sequences as an instance of
-Biostrings::DNAStringSet, or nothing if validation discards the rest of
-'cds'.
+The path to the aligned coding sequences file
 }
 \description{
 Runs the pipeline to align a set of coding sequences: First translates them,

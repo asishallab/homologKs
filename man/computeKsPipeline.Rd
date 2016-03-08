@@ -6,7 +6,7 @@
 sequences held in 'cds'. Temporary files are stored in 't.d'.}
 \usage{
 computeKsPipeline(x, cds, t.d = tempdir(),
-  ks.method = getOption("paranomeKsR.ks.method", "YN"))
+  codeml.call = getOption("paranomeKsR.codeml.call", "codeml"))
 }
 \arguments{
 \item{x}{character vector of gene IDs}
@@ -16,13 +16,13 @@ coding sequences of the genes in 'x'}
 
 \item{t.d}{the directory to store the files in, default is tempdir()}
 
-\item{ks.method}{command line switch to be passed to 'KaKs_Calculator' as
-the method ('-m' argument) to be used, default is 'YN' [1].
-Set option 'paranomeKsR.ks.method' to your choice, e.g. 'MA' (Model Averaging)}
+\item{codeml.call}{the call passed to system(...) in order to start codeml.
+Default is 'codeml', use option 'paranomeKsR.codeml.call' to set another
+default.}
 }
 \value{
-A numeric being the result of invoking 'KaKs_Calculator' on the
-aligned coding sequences, or NA if an error occurres.
+A numeric being the result of invoking PAML's codeml on the aligned
+coding sequences, or NA if an error occurres.
 }
 \description{
 Runs the pipeline to compute the Ks values of gene pair 'x' with coding
