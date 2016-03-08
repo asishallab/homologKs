@@ -48,10 +48,15 @@ computeKsPipeline <- function(x, cds, t.d = tempdir(), codeml.call = getOption("
             putGenePairIntoRedis(x)
             pair.cds.msa.path <- alignCodingSequencesPipeline(cds[x], t.d, p.n)
             pair.codeml.in.out <- renderCodemlInputs(x, pair.cds.msa.path)
+            orig.dir <- getwd()
+            setwd(t.d)
             system(paste(codeml.call, pair.codeml.in.out[["in"]]))
+            setwd(orig.dir)
+            as.numeric(system(paste("tail -1", pair.codeml.in.out[["out"]], "| awk -F \"dS = \" '{print $2}'"), 
+                intern = TRUE))
         }
     }, error = function(e) {
-        warning("Computing Ks value of gene pair '", p.n, "' caused an error:\n", 
+        message("ERROR: Computing Ks value of gene pair '", p.n, "' caused an error:\n", 
             e)
         NA
     })
