@@ -5,14 +5,19 @@
 \title{Runs the pipeline to compute the Ks values of gene pair 'x' with coding
 sequences held in 'cds'. Temporary files are stored in 't.d'.}
 \usage{
-computeKsPipeline(x, cds, t.d = tempdir(),
+computeKsPipeline(x, cds = chi.cds, aas = chi.aas, t.d = tempdir(),
   codeml.call = getOption("paranomeKsR.codeml.call", "codeml"))
 }
 \arguments{
 \item{x}{character vector of gene IDs}
 
-\item{cds}{an instance of Biostrings::XStringSet holding the unaligned
-coding sequences of the genes in 'x'}
+\item{cds}{an instance of Biostrings::DNAStringSet holding the unaligned
+coding sequences of the genes in 'x'. Default is 'paranomeKsR::chi.cds'.}
+
+\item{aas}{an instance of Biostrings::AAStringSet holding the amino acid
+sequences for the genes in 'cds'. You can use Biostrings::translate or the
+program MACSE to generate them from the coding sequences. Default is
+'paranomeKsR::chi.aas'.}
 
 \item{t.d}{the directory to store the files in, default is tempdir()}
 

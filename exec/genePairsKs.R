@@ -1,6 +1,6 @@
 require(paranomeKsR)
 
-message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row coding_sequences.fasta redis_url out_path [intermediate_files_directory] [KaKs_Calculator's method (default: YN)]")
+message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row redis_url out_path [intermediate_files_directory] [KaKs_Calculator's method (default: YN)]")
 
 #' Read and process input arguments:
 input.args <- commandArgs(trailingOnly = TRUE)
@@ -9,15 +9,14 @@ start.row <- as.integer(input.args[[2]])
 stop.row <- as.integer(input.args[[3]])
 blastp.res.tbl <- read.table(input.args[[1]], stringsAsFactors = FALSE)[start.row:stop.row, 
     ]
-cds <- readDNAStringSet(input.args[[4]])
-redisConnect(input.args[[5]])
+redisConnect(input.args[[4]])
 
-t.d <- if (length(input.args) > 6) {
-    file.path(input.args[[7]])
+t.d <- if (length(input.args) > 5) {
+    file.path(input.args[[6]])
 } else tempdir()
 
-if (length(input.args) > 7) {
-    options(paranomeKsR.ks.method = input.args[[8]])
+if (length(input.args) > 6) {
+    options(paranomeKsR.ks.method = input.args[[7]])
 }
 
 #' Start the computation:

@@ -29,8 +29,12 @@ putGenePairIntoRedis <- function(gene.pair) {
 #' sequences held in 'cds'. Temporary files are stored in 't.d'.
 #'
 #' @param x character vector of gene IDs
-#' @param cds an instance of Biostrings::XStringSet holding the unaligned
-#' coding sequences of the genes in 'x'
+#' @param cds an instance of Biostrings::DNAStringSet holding the unaligned
+#' coding sequences of the genes in 'x'. Default is 'paranomeKsR::chi.cds'.
+#' @param aas an instance of Biostrings::AAStringSet holding the amino acid
+#' sequences for the genes in 'cds'. You can use Biostrings::translate or the
+#' program MACSE to generate them from the coding sequences. Default is
+#' 'paranomeKsR::chi.aas'.
 #' @param t.d the directory to store the files in, default is tempdir()
 #' @param codeml.call the call passed to system(...) in order to start codeml.
 #' Default is 'codeml', use option 'paranomeKsR.codeml.call' to set another
@@ -40,13 +44,14 @@ putGenePairIntoRedis <- function(gene.pair) {
 #' coding sequences, or NA if an error occurres.
 #' @references Yang, Z. and Nielsen, R. (2000) Mol. Biol. Evol., 17, 32-43.
 #' @export
-computeKsPipeline <- function(x, cds, t.d = tempdir(), codeml.call = getOption("paranomeKsR.codeml.call", 
+computeKsPipeline <- function(x, cds = chi.cds, aas = chi.aas, t.d = tempdir(), codeml.call = getOption("paranomeKsR.codeml.call", 
     "codeml")) {
     p.n <- paste(sort(x), collapse = "_")
     tryCatch({
         if (!genePairInRedis(x)) {
             putGenePairIntoRedis(x)
-            pair.cds.msa.path <- alignCodingSequencesPipeline(cds[x], t.d, p.n)
+            pair.cds.msa.path <- alignCodingSequencesPipeline(cds[x], aas[x], t.d, 
+                p.n)
             pair.codeml.in.out <- renderCodemlInputs(x, pair.cds.msa.path)
             orig.dir <- getwd()
             setwd(t.d)
