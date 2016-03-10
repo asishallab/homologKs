@@ -1,6 +1,6 @@
 require(paranomeKsR)
 
-message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row redis_url out_path [intermediate_files_directory] [KaKs_Calculator's method (default: YN)]")
+message("USAGE: Rscript path/2/paranomeKsR/exec/genePairsKs.R blastp+_format6_result_table.tsv start_row stop_row redis_url out_path [intermediate_files_directory]")
 
 #' Read and process input arguments:
 input.args <- commandArgs(trailingOnly = TRUE)
@@ -15,23 +15,19 @@ t.d <- if (length(input.args) > 5) {
     file.path(input.args[[6]])
 } else tempdir()
 
-if (length(input.args) > 6) {
-    options(paranomeKsR.ks.method = input.args[[7]])
-}
-
 #' Start the computation:
 b.tbl <- blastp.res.tbl[with(blastp.res.tbl, which(V1 != V2 & V3 >= 30 & V4 >= 150)), 
     c("V1", "V2")]
 b.tbl$V3 <- as.numeric(NA)
 for (i in 1:nrow(b.tbl)) {
     x <- unlist(b.tbl[i, 1:2])
-    pair.ks <- computeKsPipeline(x, cds, t.d)
+    pair.ks <- computeKsPipeline(x)
     if (!is.null(pair.ks) && !is.na(pair.ks)) 
         b.tbl[which(b.tbl$V1 == x[[1]] & b.tbl$V2 == x[[2]]), "V3"] <- pair.ks
 }
 
 # Write results:
-o.path <- file.path(input.args[[6]])
+o.path <- file.path(input.args[[5]])
 write.table(b.tbl, o.path, sep = "\t", col.names = FALSE, row.names = FALSE, quote = FALSE)
 
 message("DONE") 
