@@ -15,7 +15,7 @@ of the United States of America 102, no. 15 (April 12, 2005): 5454–59.
 doi:10.1073/pnas.0501102102.}
 \usage{
 weightedDistsForNode(fam.tr, tr.nd, ks.tbl = chi.paranome.ks,
-  weight.func = getOption("ksParanomeR.dist.weight.func", stats::median))
+  weight.func = getOption("ksParanomeR.dist.weight.func", stats::mean))
 }
 \arguments{
 \item{fam.tr}{an instance of ape::phylo representing the tree of the
@@ -30,7 +30,7 @@ the first two hold gene identifier and the third holds the measured distance
 (Ks) values. Default is 'chi.paranome.ks'.}
 
 \item{weight.func}{The function used to compute the weighted distance at the
-family tree's node 'tr.nd'. Default is stats::median. Other functions can be
+family tree's node 'tr.nd'. Default is stats::mean. Other functions can be
 set as an option, use
 'options("ksParanomeR.dist.weight.func"=yourFunction)'.}
 }

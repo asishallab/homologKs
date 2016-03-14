@@ -144,7 +144,7 @@ getDescendantTipsOrSelf <- function(phylo.tr, tr.nd) {
 #' the first two hold gene identifier and the third holds the measured distance
 #' (Ks) values. Default is 'chi.paranome.ks'.
 #' @param weight.func The function used to compute the weighted distance at the
-#' family tree's node 'tr.nd'. Default is stats::median. Other functions can be
+#' family tree's node 'tr.nd'. Default is stats::mean. Other functions can be
 #' set as an option, use
 #' 'options("ksParanomeR.dist.weight.func"=yourFunction)'.
 #'
@@ -152,7 +152,7 @@ getDescendantTipsOrSelf <- function(phylo.tr, tr.nd) {
 #' of "relevant" gene pairs.
 #' @export
 weightedDistsForNode <- function(fam.tr, tr.nd, ks.tbl = chi.paranome.ks, weight.func = getOption("ksParanomeR.dist.weight.func", 
-    stats::median)) {
+    stats::mean)) {
     desc.nds <- Descendants(fam.tr, tr.nd, type = "children")
     gene.pairs <- expand.grid(getDescendantTipsOrSelf(fam.tr, desc.nds[[1]]), getDescendantTipsOrSelf(fam.tr, 
         desc.nds[[2]]), stringsAsFactors = FALSE)
